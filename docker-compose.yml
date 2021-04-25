@@ -1,0 +1,22 @@
+version: "3.9"
+services:
+  # DATABASE
+  postgres:
+    build: .
+    image: 'eg_postgresql'
+    container_name: 'taskapp_pg'
+    environment:
+      POSTGRES_USER: taskapp_admin
+      POSTGRES_PASSWORD: taskapp_admin
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - taskapp
+    restart: unless-stopped
+volumes:
+  postgres:
+networks:
+  taskapp:

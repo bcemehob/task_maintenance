@@ -1,0 +1,130 @@
+plugins {
+    id 'org.springframework.boot' version '2.4.5'
+    id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'java'
+    id "org.sonarqube" version "3.1.1"
+    id 'jacoco'
+
+}
+apply plugin: "org.sonarqube"
+apply plugin: 'jacoco'
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+}
+
+jacocoTestReport{
+    dependsOn test
+    reports {
+        html.enabled false
+        xml.enabled true
+        csv.enabled false
+        xml.destination file("build/reports/jacoco/xml/coverage.xml")
+//		html.destination file("build/reports/jacoco/html")
+    }
+    getExecutionData().setFrom("$buildDir/jacoco/test.exec")
+//	executionData.from = files('build/jacoco/test.exec')
+}
+
+
+sourceSets {
+    itest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/itest/java')
+        }
+        resources {
+            srcDirs = ['src/itest/resources']
+        }
+    }
+}
+
+
+tasks.register('itest', Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+
+    testClassesDirs = sourceSets.itest.output.classesDirs
+    classpath = sourceSets.itest.runtimeClasspath
+}
+
+configurations {
+    itestImplementation.extendsFrom implementation
+}
+
+group = 'net.erply.demo'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation group: 'javax.inject', name: 'javax.inject', version: '1'
+    runtimeOnly 'org.postgresql:postgresql'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.1'
+    implementation group: 'io.springfox', name: 'springfox-swagger2', version: '2.8.0'
+    implementation group: 'io.springfox', name: 'springfox-swagger-ui', version: '2.8.0'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation group: 'org.mapstruct', name: 'mapstruct', version: '1.4.2.Final'
+    implementation group: 'org.mapstruct', name: 'mapstruct-processor', version: '1.4.2.Final'
+    implementation group: 'org.flywaydb', name: 'flyway-core', version: '7.8.1'
+    annotationProcessor 'org.projectlombok:lombok'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final'
+    compileOnly 'org.projectlombok:lombok'
+    itestImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.7.1'
+    itestImplementation 'org.springframework.boot:spring-boot-starter-test'
+    itestImplementation 'org.springframework.boot:spring-boot-starter-web'
+    itestImplementation group: 'org.testcontainers', name: 'testcontainers', version: '1.15.2'
+    itestImplementation group: 'org.testcontainers', name: 'postgresql', version: '1.15.2'
+    itestImplementation group: 'org.testcontainers', name: 'junit-jupiter', version: '1.15.2'
+    itestImplementation group: 'org.postgresql', name: 'postgresql', version: '42.2.19'
+    itest {
+        useJUnitPlatform()
+    }
+
+
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+subprojects {
+    apply plugin: 'java'
+    repositories {
+        mavenCentral()
+    }
+
+}
+
+def SONAR_URL = "http://localhost:9000"
+def SONAR_LOGIN = null
+def SONAR_PASSWORD = null
+
+task local {
+    doFirst {
+        SONAR_URL = "http://localhost:9000"
+        SONAR_LOGIN = "admin"
+        SONAR_PASSWORD = "admin1"
+    }
+}
+sonarqube {
+    properties {
+        property "sonar.host.url", SONAR_URL
+        property "sonar.login", SONAR_LOGIN
+        property "sonar.password", SONAR_PASSWORD
+        // For Sonar 7
+        property "sonar.jacoco.xmlReportPaths", "${project.buildDir}/reports/jacoco/xml/*"
+
+
+    }
+}
+
